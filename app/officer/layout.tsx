@@ -52,7 +52,7 @@ export default function OfficerLayout({ children }: { children: ReactNode }) {
   }, [router])
 
   const navigation: NavigationItem[] = [
-    { name: 'dashboard', href: '/officer', icon: HomeIcon },
+    { name: 'dashboard', href: '/officer/dashboard', icon: HomeIcon },
     { name: 'verifications', href: '/officer/verifications', icon: DocumentCheckIcon },
     { name: 'marketplace', href: '/officer/marketplace', icon: BuildingStorefrontIcon },
     { name: 'payments', href: '/officer/payments', icon: CreditCardIcon },
