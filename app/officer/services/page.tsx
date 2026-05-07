@@ -8,44 +8,42 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
-  AlertTriangleIcon,
+  ExclamationTriangleIcon,
   UserIcon,
   CalendarIcon,
   ScaleIcon,
-  ArrowPathIcon
-} from '@heroicons/react/24/outline';
+  ArrowPathIcon, DocumentTextIcon,
+  DocumentTextIcon   // Add this
+} from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast';
 
 const API_URL = 'http://localhost:5000/api';
 
-interface Dispute {
+interface ServiceApplication {
   id: number;
-  complainant: string;
-  respondent: string;
-  type: string;
-  status: 'open' | 'in-progress' | 'resolved' | 'closed';
-  priority: 'high' | 'medium' | 'low';
+  applicant: string;
+  serviceType: string;
+  status: 'pending' | 'approved' | 'rejected' | 'in-progress';
+  fee: number;
   date: string;
   description?: string;
-  resolution?: string;
 }
 
-export default function OfficerDisputesPage() {
+export default function OfficerServicesPage() {
   const { darkMode, language } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
-  const [disputes, setDisputes] = useState<Dispute[]>([]);
+  const [applications, setApplications] = useState<ServiceApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null);
+  const [selectedApplication, setSelectedApplication] = useState<ServiceApplication | null>(null);
 
   const cn = (darkClass: string, lightClass: string) => darkMode ? darkClass : lightClass;
 
   const t = (en: string, am: string) => language === 'en' ? en : am;
 
-  // Fetch disputes from backend
-  const fetchDisputes = async () => {
+  // Fetch applications from backend
+  const fetchApplications = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -57,25 +55,25 @@ export default function OfficerDisputesPage() {
       }
 
       // First try officer endpoint
-      let response = await fetch(`${API_URL}/officer/disputes`, {
+      let response = await fetch(`${API_URL}/officer/service-applications`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
       // If officer endpoint fails (404), try admin endpoint
       if (response.status === 404) {
-        response = await fetch(`${API_URL}/admin/disputes`, {
+        response = await fetch(`${API_URL}/admin/service-applications`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
       }
 
       // If both fail, use fallback data
       if (response.status === 404) {
-        console.log('Using fallback dispute data');
-        setDisputes([
-          { id: 1, complainant: 'Abebe Kebede', respondent: 'Tekle Berhan', type: 'Boundary', status: 'open', priority: 'high', date: '2024-03-15', description: 'Boundary dispute between neighbors' },
-          { id: 2, complainant: 'Biruk Alemu', respondent: 'City Administration', type: 'Ownership', status: 'in-progress', priority: 'medium', date: '2024-03-10', description: 'Ownership claim issue' },
-          { id: 3, complainant: 'Tigist Haile', respondent: 'Construction Co.', type: 'Encroachment', status: 'open', priority: 'high', date: '2024-03-12', description: 'Illegal construction' },
-          { id: 4, complainant: 'Mekdes Hailu', respondent: 'Neighbor', type: 'Access', status: 'resolved', priority: 'low', date: '2024-03-05', description: 'Right of way dispute', resolution: 'Access granted with conditions' },
+        console.log('Using fallback data');
+        setApplications([
+          { id: 1, applicant: 'Abebe Kebede', serviceType: 'Land Subdivision', status: 'pending', fee: 2500, date: '2024-03-15', description: 'Subdivide into 2 plots' },
+          { id: 2, applicant: 'Tigist Haile', serviceType: 'Title Deed Replacement', status: 'pending', fee: 1500, date: '2024-03-14', description: 'Lost original deed' },
+          { id: 3, applicant: 'Biruk Alemu', serviceType: 'Boundary Survey', status: 'pending', fee: 3000, date: '2024-03-16', description: 'Survey required' },
+          { id: 4, applicant: 'Mekdes Hailu', serviceType: 'Land Use Change', status: 'in-progress', fee: 5000, date: '2024-03-12', description: 'Change from agricultural to residential' },
         ]);
         setLoading(false);
         return;
@@ -92,30 +90,30 @@ export default function OfficerDisputesPage() {
       }
 
       const data = await response.json();
-      const disputesData = data.disputes || data || [];
-      setDisputes(Array.isArray(disputesData) ? disputesData : []);
+      const appsData = data.applications || data || [];
+      setApplications(Array.isArray(appsData) ? appsData : []);
     } catch (error) {
       console.error('Fetch error:', error);
-      setError(t('Failed to load disputes', 'አለመግባባቶችን ማምጣት አልተሳካም'));
-      toast.error(t('Failed to load disputes', 'አለመግባባቶችን ማምጣት አልተሳካም'));
+      setError(t('Failed to load applications', 'አመልካቾችን ማምጣት አልተሳካም'));
+      toast.error(t('Failed to load applications', 'አመልካቾችን ማምጣት አልተሳካም'));
       // Fallback data
-      setDisputes([
-        { id: 1, complainant: 'Abebe Kebede', respondent: 'Tekle Berhan', type: 'Boundary', status: 'open', priority: 'high', date: '2024-03-15', description: 'Boundary dispute between neighbors' },
-        { id: 2, complainant: 'Biruk Alemu', respondent: 'City Administration', type: 'Ownership', status: 'in-progress', priority: 'medium', date: '2024-03-10', description: 'Ownership claim issue' },
-        { id: 3, complainant: 'Tigist Haile', respondent: 'Construction Co.', type: 'Encroachment', status: 'open', priority: 'high', date: '2024-03-12', description: 'Illegal construction' },
+      setApplications([
+        { id: 1, applicant: 'Abebe Kebede', serviceType: 'Land Subdivision', status: 'pending', fee: 2500, date: '2024-03-15', description: 'Subdivide into 2 plots' },
+        { id: 2, applicant: 'Tigist Haile', serviceType: 'Title Deed Replacement', status: 'pending', fee: 1500, date: '2024-03-14', description: 'Lost original deed' },
+        { id: 3, applicant: 'Biruk Alemu', serviceType: 'Boundary Survey', status: 'pending', fee: 3000, date: '2024-03-16', description: 'Survey required' },
       ]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Update dispute status
+  // Update application status
   const updateStatus = async (id: number, status: string) => {
     try {
       const token = localStorage.getItem('token');
       
       // Try to update via officer endpoint
-      let response = await fetch(`${API_URL}/officer/disputes/${id}/status`, {
+      let response = await fetch(`${API_URL}/officer/service-applications/${id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +124,7 @@ export default function OfficerDisputesPage() {
 
       // If officer endpoint fails, try admin endpoint
       if (response.status === 404) {
-        response = await fetch(`${API_URL}/admin/disputes/${id}/status`, {
+        response = await fetch(`${API_URL}/admin/service-applications/${id}/status`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -143,58 +141,51 @@ export default function OfficerDisputesPage() {
       }
 
       if (response.ok) {
-        const successMsg = status === 'resolved' 
-          ? t('Dispute resolved', 'አለመግባባቱ ተፈትቷል')
-          : t('Dispute updated', 'አለመግባባቱ ተዘምኗል');
+        const successMsg = status === 'approved' 
+          ? t('Application approved', 'ማመልከቻው ጸድቋል')
+          : t('Application rejected', 'ማመልከቻው ውድቅ ተደርጓል');
         toast.success(successMsg);
-        fetchDisputes();
+        fetchApplications();
       } else {
         // If API update fails, update locally for demo
-        setDisputes(prev => prev.map(dispute => 
-          dispute.id === id ? { ...dispute, status: status as any } : dispute
+        setApplications(prev => prev.map(app => 
+          app.id === id ? { ...app, status: status as any } : app
         ));
-        toast.success(status === 'resolved' ? 'Dispute resolved (Demo)' : 'Dispute updated (Demo)');
+        toast.success(status === 'approved' ? 'Application approved (Demo)' : 'Application rejected (Demo)');
       }
     } catch (error) {
-      console.error('Error updating dispute:', error);
+      console.error('Error updating status:', error);
       // Update locally as fallback
-      setDisputes(prev => prev.map(dispute => 
-        dispute.id === id ? { ...dispute, status: status as any } : dispute
+      setApplications(prev => prev.map(app => 
+        app.id === id ? { ...app, status: status as any } : app
       ));
-      toast.success(status === 'resolved' ? 'Dispute resolved (Demo)' : 'Dispute updated (Demo)');
+      toast.success(status === 'approved' ? 'Application approved (Demo)' : 'Application rejected (Demo)');
     }
   };
 
   useEffect(() => {
-    fetchDisputes();
+    fetchApplications();
   }, []);
 
   const getStatusBadge = (status: string) => {
-    if (status === 'resolved' || status === 'closed') {
-      return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">{t('Resolved', 'ተፈትቷል')}</span>;
+    if (status === 'approved') {
+      return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">{t('Approved', 'የጸደቀ')}</span>;
+    }
+    if (status === 'rejected') {
+      return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">{t('Rejected', 'ውድቅ ተደርጓል')}</span>;
     }
     if (status === 'in-progress') {
       return <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">{t('In Progress', 'በሂደት ላይ')}</span>;
     }
-    return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">{t('Open', 'ክፍት')}</span>;
+    return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">{t('Pending', 'በመጠባበቅ ላይ')}</span>;
   };
 
-  const getPriorityBadge = (priority: string) => {
-    if (priority === 'high') {
-      return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">{t('High', 'ከፍተኛ')}</span>;
-    }
-    if (priority === 'medium') {
-      return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">{t('Medium', 'መካከለኛ')}</span>;
-    }
-    return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">{t('Low', 'ዝቅተኛ')}</span>;
-  };
-
-  const getTypeText = (type: string) => {
+  const getServiceTypeText = (type: string) => {
     const types: Record<string, { en: string; am: string }> = {
-      'Boundary': { en: 'Boundary', am: 'ድንበር' },
-      'Ownership': { en: 'Ownership', am: 'ባለቤትነት' },
-      'Encroachment': { en: 'Encroachment', am: 'ወረራ' },
-      'Access': { en: 'Access', am: 'መዳረሻ' },
+      'Land Subdivision': { en: 'Land Subdivision', am: 'የመሬት ክፍፍል' },
+      'Title Deed Replacement': { en: 'Title Deed Replacement', am: 'የባለቤትነት ማረጋገጫ መተካት' },
+      'Boundary Survey': { en: 'Boundary Survey', am: 'የድንበር ቅኝት' },
+      'Land Use Change': { en: 'Land Use Change', am: 'የመሬት አጠቃቀም ለውጥ' },
     };
     return types[type]?.[language] || type;
   };
@@ -204,22 +195,28 @@ export default function OfficerDisputesPage() {
     return date.toLocaleDateString(language === 'en' ? 'en-US' : 'am-ET');
   };
 
-  const filteredDisputes = disputes.filter(dispute => {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-ET', {
+      style: 'currency',
+      currency: 'ETB',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const filteredApplications = applications.filter(app => {
     const matchesSearch = searchTerm === '' || 
-      dispute.complainant.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      dispute.respondent.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      dispute.type.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || dispute.status === statusFilter;
-    const matchesPriority = priorityFilter === 'all' || dispute.priority === priorityFilter;
-    return matchesSearch && matchesStatus && matchesPriority;
+      app.applicant.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.serviceType.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || app.status === statusFilter;
+    return matchesSearch && matchesStatus;
   });
 
   const stats = {
-    total: disputes.length,
-    open: disputes.filter(d => d.status === 'open').length,
-    inProgress: disputes.filter(d => d.status === 'in-progress').length,
-    resolved: disputes.filter(d => d.status === 'resolved' || d.status === 'closed').length,
-    highPriority: disputes.filter(d => d.priority === 'high').length
+    total: applications.length,
+    pending: applications.filter(a => a.status === 'pending').length,
+    approved: applications.filter(a => a.status === 'approved').length,
+    rejected: applications.filter(a => a.status === 'rejected').length,
+    inProgress: applications.filter(a => a.status === 'in-progress').length
   };
 
   if (loading) {
@@ -236,7 +233,7 @@ export default function OfficerDisputesPage() {
         <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
           <p className="font-bold">{t('Error', 'ስህተት')}</p>
           <p>{error}</p>
-          <button onClick={fetchDisputes} className="mt-2 bg-red-600 text-white px-3 py-1 rounded text-sm flex items-center gap-2">
+          <button onClick={fetchApplications} className="mt-2 bg-red-600 text-white px-3 py-1 rounded text-sm flex items-center gap-2">
             <ArrowPathIcon className="w-4 h-4" />
             {t('Try Again', 'እንደገና ሞክር')}
           </button>
@@ -251,14 +248,14 @@ export default function OfficerDisputesPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className={`text-2xl font-bold ${cn('text-white', 'text-gray-900')}`}>
-            {t('Disputes', 'አለመግባባቶች')}
+            {t('Service Applications', 'የአገልግሎት ማመልከቻዎች')}
           </h1>
           <p className={`text-sm mt-1 ${cn('text-gray-400', 'text-gray-500')}`}>
-            {t('Total', 'ጠቅላላ')}: {disputes.length} {t('disputes', 'አለመግባባቶች')}
+            {t('Total', 'ጠቅላላ')}: {applications.length} {t('applications', 'ማመልከቻዎች')}
           </p>
         </div>
         <button
-          onClick={fetchDisputes}
+          onClick={fetchApplications}
           className={`p-2 rounded-lg ${cn('hover:bg-gray-700', 'hover:bg-gray-100')}`}
           title={t('Refresh', 'አድስ')}
         >
@@ -267,22 +264,26 @@ export default function OfficerDisputesPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className={`${cn('bg-gray-800', 'bg-white')} rounded-xl shadow-sm p-4`}>
           <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Total', 'ጠቅላላ')}</p>
           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.total}</p>
         </div>
         <div className={`${cn('bg-gray-800', 'bg-white')} rounded-xl shadow-sm p-4`}>
-          <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Open', 'ክፍት')}</p>
-          <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.open}</p>
+          <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Pending', 'በመጠባበቅ ላይ')}</p>
+          <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pending}</p>
+        </div>
+        <div className={`${cn('bg-gray-800', 'bg-white')} rounded-xl shadow-sm p-4`}>
+          <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Approved', 'የጸደቀ')}</p>
+          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.approved}</p>
+        </div>
+        <div className={`${cn('bg-gray-800', 'bg-white')} rounded-xl shadow-sm p-4`}>
+          <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Rejected', 'ውድቅ ተደርጓል')}</p>
+          <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.rejected}</p>
         </div>
         <div className={`${cn('bg-gray-800', 'bg-white')} rounded-xl shadow-sm p-4`}>
           <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('In Progress', 'በሂደት ላይ')}</p>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.inProgress}</p>
-        </div>
-        <div className={`${cn('bg-gray-800', 'bg-white')} rounded-xl shadow-sm p-4`}>
-          <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Resolved', 'የተፈታ')}</p>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.resolved}</p>
+          <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.inProgress}</p>
         </div>
       </div>
 
@@ -293,7 +294,7 @@ export default function OfficerDisputesPage() {
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder={t('Search by complainant, respondent, or type...', 'በአቤቱታ ሰጪ፣ በተከሳሽ ወይም በአይነት ፈልግ...')}
+              placeholder={t('Search by name or service...', 'በስም ወይም በአገልግሎት ፈልግ...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
@@ -306,51 +307,35 @@ export default function OfficerDisputesPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 md:w-40 ${
+            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 md:w-48 ${
               darkMode 
                 ? 'bg-gray-700 border-gray-600 text-white' 
                 : 'bg-white border-gray-300 text-gray-900'
             }`}
           >
             <option value="all">{t('All Status', 'ሁሉም ሁኔታ')}</option>
-            <option value="open">{t('Open', 'ክፍት')}</option>
+            <option value="pending">{t('Pending', 'በመጠባበቅ ላይ')}</option>
+            <option value="approved">{t('Approved', 'የጸደቀ')}</option>
+            <option value="rejected">{t('Rejected', 'ውድቅ ተደርጓል')}</option>
             <option value="in-progress">{t('In Progress', 'በሂደት ላይ')}</option>
-            <option value="resolved">{t('Resolved', 'የተፈታ')}</option>
-          </select>
-          <select
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
-            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 md:w-40 ${
-              darkMode 
-                ? 'bg-gray-700 border-gray-600 text-white' 
-                : 'bg-white border-gray-300 text-gray-900'
-            }`}
-          >
-            <option value="all">{t('All Priority', 'ሁሉም ቅድሚያ')}</option>
-            <option value="high">{t('High', 'ከፍተኛ')}</option>
-            <option value="medium">{t('Medium', 'መካከለኛ')}</option>
-            <option value="low">{t('Low', 'ዝቅተኛ')}</option>
           </select>
         </div>
       </div>
 
-      {/* Disputes Table */}
+      {/* Applications Table */}
       <div className={`${cn('bg-gray-800', 'bg-white')} rounded-xl shadow-sm overflow-hidden`}>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className={cn('bg-gray-700', 'bg-gray-50')}>
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  {t('Complainant', 'አቤቱታ ሰጪ')}
+                  {t('Applicant', 'አመልካች')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  {t('Respondent', 'ተከሳሽ')}
+                  {t('Service Type', 'የአገልግሎት አይነት')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  {t('Type', 'አይነት')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  {t('Priority', 'ቅድሚያ')}
+                  {t('Fee', 'ክፍያ')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   {t('Date', 'ቀን')}
@@ -364,60 +349,66 @@ export default function OfficerDisputesPage() {
               </tr>
             </thead>
             <tbody className={`${cn('bg-gray-800', 'bg-white')} divide-y ${cn('divide-gray-700', 'divide-gray-200')}`}>
-              {filteredDisputes.map((dispute) => (
-                <tr key={dispute.id} className={cn('hover:bg-gray-700', 'hover:bg-gray-50') + ' transition-colors'}>
+              {filteredApplications.map((app) => (
+                <tr key={app.id} className={cn('hover:bg-gray-700', 'hover:bg-gray-50') + ' transition-colors'}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-sm font-semibold">
-                          {dispute.complainant.charAt(0)}
+                          {app.applicant.charAt(0)}
                         </span>
                       </div>
                       <div className="ml-3">
                         <p className={`text-sm font-medium ${cn('text-white', 'text-gray-900')}`}>
-                          {dispute.complainant}
+                          {app.applicant}
                         </p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <p className={`text-sm ${cn('text-gray-300', 'text-gray-600')}`}>
-                      {dispute.respondent}
+                      {getServiceTypeText(app.serviceType)}
                     </p>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <p className={`text-sm ${cn('text-gray-300', 'text-gray-600')}`}>
-                      {getTypeText(dispute.type)}
+                    <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                      {formatCurrency(app.fee)}
                     </p>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getPriorityBadge(dispute.priority)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>
-                      {formatDate(dispute.date)}
+                      {formatDate(app.date)}
                     </p>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(dispute.status)}
+                    {getStatusBadge(app.status)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
                       <button 
-                        onClick={() => setSelectedDispute(dispute)}
+                        onClick={() => setSelectedApplication(app)}
                         className="p-1 rounded-lg transition-colors"
                         title={t('View Details', 'ዝርዝሮችን ተመልከት')}
                       >
                         <EyeIcon className="w-5 h-5 text-blue-400" />
                       </button>
-                      {dispute.status !== 'resolved' && dispute.status !== 'closed' && (
-                        <button 
-                          onClick={() => updateStatus(dispute.id, 'resolved')}
-                          className="p-1 rounded-lg transition-colors"
-                          title={t('Mark Resolved', 'እንደተፈታ ምልክት አድርግ')}
-                        >
-                          <CheckCircleIcon className="w-5 h-5 text-green-400" />
-                        </button>
+                      {app.status === 'pending' && (
+                        <>
+                          <button 
+                            onClick={() => updateStatus(app.id, 'approved')}
+                            className="p-1 rounded-lg transition-colors"
+                            title={t('Approve', 'አጽድቅ')}
+                          >
+                            <CheckCircleIcon className="w-5 h-5 text-green-400" />
+                          </button>
+                          <button 
+                            onClick={() => updateStatus(app.id, 'rejected')}
+                            className="p-1 rounded-lg transition-colors"
+                            title={t('Reject', 'ውድቅ አድርግ')}
+                          >
+                            <XCircleIcon className="w-5 h-5 text-red-400" />
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>
@@ -427,26 +418,26 @@ export default function OfficerDisputesPage() {
           </table>
         </div>
 
-        {filteredDisputes.length === 0 && (
+        {filteredApplications.length === 0 && (
           <div className="p-8 text-center">
-            <ScaleIcon className={`w-12 h-12 mx-auto mb-4 ${cn('text-gray-600', 'text-gray-400')}`} />
+            <DocumentTextIcon className={`w-12 h-12 mx-auto mb-4 ${cn('text-gray-600', 'text-gray-400')}`} />
             <p className={`text-lg ${cn('text-gray-400', 'text-gray-600')}`}>
-              {t('No disputes found', 'ምንም አለመግባባቶች አልተገኙም')}
+              {t('No applications found', 'ምንም ማመልከቻዎች አልተገኙም')}
             </p>
           </div>
         )}
       </div>
 
       {/* Details Modal */}
-      {selectedDispute && (
+      {selectedApplication && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`${cn('bg-gray-800', 'bg-white')} rounded-xl max-w-md w-full p-6`}>
             <div className="flex justify-between items-center mb-4">
               <h2 className={`text-xl font-bold ${cn('text-white', 'text-gray-900')}`}>
-                {t('Dispute Details', 'የአለመግባባት ዝርዝሮች')}
+                {t('Application Details', 'የማመልከቻ ዝርዝሮች')}
               </h2>
               <button 
-                onClick={() => setSelectedDispute(null)}
+                onClick={() => setSelectedApplication(null)}
                 className={`${cn('text-gray-400 hover:text-gray-300', 'text-gray-500 hover:text-gray-700')}`}
               >
                 ✕
@@ -454,56 +445,35 @@ export default function OfficerDisputesPage() {
             </div>
             <div className="space-y-3">
               <div>
-                <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Complainant', 'አቤቱታ ሰጪ')}</p>
-                <p className={`font-medium ${cn('text-white', 'text-gray-900')}`}>{selectedDispute.complainant}</p>
+                <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Applicant', 'አመልካች')}</p>
+                <p className={`font-medium ${cn('text-white', 'text-gray-900')}`}>{selectedApplication.applicant}</p>
               </div>
               <div>
-                <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Respondent', 'ተከሳሽ')}</p>
-                <p className={`font-medium ${cn('text-white', 'text-gray-900')}`}>{selectedDispute.respondent}</p>
+                <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Service Type', 'የአገልግሎት አይነት')}</p>
+                <p className={`font-medium ${cn('text-white', 'text-gray-900')}`}>{getServiceTypeText(selectedApplication.serviceType)}</p>
               </div>
               <div>
-                <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Type', 'አይነት')}</p>
-                <p className={`font-medium ${cn('text-white', 'text-gray-900')}`}>{getTypeText(selectedDispute.type)}</p>
-              </div>
-              <div>
-                <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Priority', 'ቅድሚያ')}</p>
-                <div>{getPriorityBadge(selectedDispute.priority)}</div>
+                <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Fee', 'ክፍያ')}</p>
+                <p className={`font-medium text-green-600 dark:text-green-400`}>{formatCurrency(selectedApplication.fee)}</p>
               </div>
               <div>
                 <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Date', 'ቀን')}</p>
-                <p className={`font-medium ${cn('text-white', 'text-gray-900')}`}>{formatDate(selectedDispute.date)}</p>
+                <p className={`font-medium ${cn('text-white', 'text-gray-900')}`}>{formatDate(selectedApplication.date)}</p>
               </div>
               <div>
                 <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Status', 'ሁኔታ')}</p>
-                <div>{getStatusBadge(selectedDispute.status)}</div>
+                <div>{getStatusBadge(selectedApplication.status)}</div>
               </div>
-              {selectedDispute.description && (
+              {selectedApplication.description && (
                 <div>
                   <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Description', 'መግለጫ')}</p>
-                  <p className={`text-sm ${cn('text-gray-300', 'text-gray-700')}`}>{selectedDispute.description}</p>
-                </div>
-              )}
-              {selectedDispute.resolution && (
-                <div>
-                  <p className={`text-sm ${cn('text-gray-400', 'text-gray-500')}`}>{t('Resolution', 'ውሳኔ')}</p>
-                  <p className={`text-sm ${cn('text-gray-300', 'text-gray-700')}`}>{selectedDispute.resolution}</p>
+                  <p className={`text-sm ${cn('text-gray-300', 'text-gray-700')}`}>{selectedApplication.description}</p>
                 </div>
               )}
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              {selectedDispute.status !== 'resolved' && selectedDispute.status !== 'closed' && (
-                <button
-                  onClick={() => {
-                    updateStatus(selectedDispute.id, 'resolved');
-                    setSelectedDispute(null);
-                  }}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                >
-                  {t('Mark Resolved', 'እንደተፈታ ምልክት አድርግ')}
-                </button>
-              )}
               <button
-                onClick={() => setSelectedDispute(null)}
+                onClick={() => setSelectedApplication(null)}
                 className={`px-4 py-2 rounded-lg ${cn('bg-gray-700 hover:bg-gray-600', 'bg-gray-200 hover:bg-gray-300')}`}
               >
                 {t('Close', 'ዝጋ')}
